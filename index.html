@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tombola Pro Animée</title>
+<style>
+body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:#fff;margin:0;padding:0;}
+.container{max-width:800px;margin:30px auto;background:rgba(28,28,28,0.95);padding:25px;border-radius:12px;text-align:center;transition:0.5s;}
+input,button,select{width:100%;padding:10px;margin-top:10px;border-radius:6px;border:none;font-size:16px;}
+input,select{background:#2c2c2c;color:#fff;}
+button{background:#00c853;font-weight:bold;cursor:pointer;transition:0.3s;}
+button:hover{background:#00e676;}
+.numbers{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:15px 0;}
+.number{background:#333;padding:12px;border-radius:6px;transition:0.3s;color:#fff;font-weight:bold;font-size:18px;}
+.result{margin-top:15px;font-size:20px;font-weight:bold;}
+.win{color:#00e676;}
+.lose{color:#ff5252;}
+.admin-section,.user-section{margin-top:30px;text-align:left;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{border:1px solid #555;padding:8px;text-align:center;}
+th{background:#222;}
+td button{padding:5px; font-size:14px;cursor:pointer;}
+.ticket-box{display:flex;justify-content:space-between;align-items:center;margin-top:5px;padding:5px;background:#333;border-radius:6px;}
+canvas.ticket-img{border:1px solid #fff;margin-left:10px;}
+.switch-link{color:#00e676;cursor:pointer;text-decoration:underline;margin-top:10px;display:block;}
+@media(max-width:600px){.numbers{grid-template-columns:repeat(4,1fr);}}
+</style>
+</head>
+<body>
+
+<div class="container" id="authBox">
+  <div id="registerPage">
+    <h2>Inscription</h2>
+    <input id="nom" placeholder="Nom">
+    <input id="prenom" placeholder="Prénom">
+    <input id="tel" placeholder="Téléphone">
+    <input id="password" placeholder="Mot de passe">
+    <button id="registerBtn">S'inscrire</button>
+    <span class="switch-link" onclick="showLogin()">Déjà inscrit ? Connexion</span>
+  </div>
+
+  <div id="loginPage" style="display:none;">
+    <h2>Connexion</h2>
+    <input id="loginTel" placeholder="Téléphone">
+    <input id="loginPassword" placeholder="Mot de passe">
+    <button id="loginBtn">Connexion</button>
+    <span class="switch-link" onclick="showRegister()">Pas encore inscrit ? Inscription</span>
+  </div>
+</div>
+
+<div class="container user-section" id="gameBox" style="display:none;">
+  <h1>S.E.A.F JEU DE TOMBOLA</h1>
+  <div class="numbers" id="numbers"></div>
+  <input id="chosenNumber" type="number" placeholder="Choisir un numéro (1-25)">
+  <input id="ticketCode" type="text" placeholder="Code ticket (4 caractères)">
+  <button id="playBtn">Lancer le jeu</button>
+  <div class="result" id="result"></div>
+
+  <h2>Historique et Solde</h2>
+  <table>
+    <thead><tr><th>Ticket</th><th>Numéro choisi</th><th>Résultat</th></tr></thead>
+    <tbody id="userHistory"></tbody>
+  </table>
+  <p>💰 Solde disponible : <span id="userBalance">0</span> FCFA</p>
+</div>
+
+<div class="container admin-section" id="adminBox" style="display:none;">
+  <h1>ADMIN – TOMBOLA</h1>
+  <button id="generateTicketBtn">Générer un ticket</button>
+  <div id="tickets"></div>
+
+  <h2>Utilisateurs & Jeux</h2>
+  <table>
+    <thead>
+      <tr><th>Nom</th><th>Tel</th><th>Ticket</th><th>Numéro choisi</th><th>Résultat</th><th>Solde</th><th>Payer</th><th>Partager</th></tr>
+    </thead>
+    <tbody id="adminUsers"></tbody>
+  </table>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, addDoc, collection, getDocs, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+// ---------------- FIREBASE ----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyAmhpsSUM7kVuRRwLvn2b8U94dNW9YW0jo",
+  authDomain: "ppojet-4f3df.firebaseapp.com",
+  projectId: "ppojet-4f3df",
+  storageBucket: "ppojet-4f3df.firebasestorage.app",
+  messagingSenderId: "914673933688",
+  appId: "1:914673933688:web:6d811c4e4b75c14dfd3c8d"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ---------------- ELEMENTS ----------------
+const authBox=document.getElementById("authBox");
+const registerPage=document.getElementById("registerPage");
+const loginPage=document.getElementById("loginPage");
+const gameBox=document.getElementById("gameBox");
+const adminBox=document.getElementById("adminBox");
+
+const nomInput=document.getElementById("nom");
+const prenomInput=document.getElementById("prenom");
+const telInput=document.getElementById("tel");
+const passwordInput=document.getElementById("password");
+const registerBtn=document.getElementById("registerBtn");
+
+const loginTelInput=document.getElementById("loginTel");
+const loginPasswordInput=document.getElementById("loginPassword");
+const loginBtn=document.getElementById("loginBtn");
+
+const numbersDiv=document.getElementById("numbers");
+const resultDiv=document.getElementById("result");
+const chosenInput=document.getElementById("chosenNumber");
+const ticketInput=document.getElementById("ticketCode");
+const playBtn=document.getElementById("playBtn");
+
+const usersDiv=document.getElementById("adminUsers");
+const ticketsDiv=document.getElementById("tickets");
+const generateTicketBtn=document.getElementById("generateTicketBtn");
+
+const userHistory=document.getElementById("userHistory");
+const userBalanceSpan=document.getElementById("userBalance");
+
+// ---------------- SWITCH PAGES ----------------
+window.showLogin = ()=>{ registerPage.style.display="none"; loginPage.style.display="block";}
+window.showRegister = ()=>{ loginPage.style.display="none"; registerPage.style.display="block";}
+
+// ---------------- INSCRIPTION ----------------
+registerBtn.addEventListener("click", async()=>{
+  const nom=nomInput.value.trim();
+  const prenom=prenomInput.value.trim();
+  const tel=telInput.value.trim();
+  const password=passwordInput.value.trim();
+  if(!nom||!prenom||!tel||!password){alert("Tous les champs sont obligatoires"); return;}
+  const ref=doc(db,"users",tel);
+  const snap=await getDoc(ref);
+  if(snap.exists()){alert("Numéro déjà utilisé"); return;}
+  await setDoc(ref,{nom,prenom,tel,password,role:"user",blocked:false,balance:0,date:new Date()});
+  alert("Compte créé !");
+  nomInput.value=prenomInput.value=telInput.value=passwordInput.value="";
+});
+
+// ---------------- CONNEXION ----------------
+loginBtn.addEventListener("click",async()=>{
+  const tel=loginTelInput.value.trim();
+  const password=loginPasswordInput.value.trim();
+  if(!tel||!password){alert("Tous les champs sont obligatoires");return;}
+  const ref=doc(db,"users",tel);
+  const snap=await getDoc(ref);
+  if(!snap.exists()){alert("Compte introuvable");return;}
+  const user=snap.data();
+  if(user.role!=="admin" && user.blocked){alert("Compte bloqué");return;}
+  if(user.password!==password){alert("Mot de passe incorrect");return;}
+  localStorage.setItem("user",JSON.stringify(user));
+  authBox.style.display="none";
+  if(user.role==="admin"){ adminBox.style.display="block"; loadAdmin(); }
+  else{ gameBox.style.display="block"; loadGame(); }
+});
+
+// ----------------- JEU UTILISATEUR -----------------
+function loadGame(){
+  const user=JSON.parse(localStorage.getItem("user"));
+  numbersDiv.innerHTML="";
+  for(let i=1;i<=25;i++){
+    const d=document.createElement("div"); d.className="number"; d.textContent=i; numbersDiv.appendChild(d);
+  }
+  updateUserHistory();
+
+  playBtn.onclick=async()=>{
+    const ticket=ticketInput.value.trim().toUpperCase();
+    const chosen=parseInt(chosenInput.value);
+    if(!ticket || ticket.length!==4){alert("Ticket invalide"); return;}
+    if(!chosen || chosen<1 || chosen>25){alert("Numéro invalide"); return;}
+    const ticketRef=doc(db,"tickets",ticket);
+    const snap=await getDoc(ticketRef);
+    if(!snap.exists()){alert("Ticket inexistant"); return;}
+    const t=snap.data();
+    if(t.used){alert("Ticket déjà utilisé"); return;}
+
+    // Tirage animé
+    const gagnant=Math.floor(Math.random()*25)+1;
+    let current=0;
+    const numberDivs=document.querySelectorAll(".number");
+    const interval=setInterval(()=>{
+      numberDivs.forEach(nd=>nd.style.background="#333");
+      const randHue=Math.random()*360;
+      numberDivs[current].style.background=`hsl(${randHue},100%,50%)`;
+      current=(current+1)%25;
+    },100);
+
+    setTimeout(async()=>{
+      clearInterval(interval);
+      numberDivs.forEach(nd=>nd.style.background="#333");
+      numberDivs[gagnant-1].style.background="#00e676";
+
+      const result=chosen===gagnant?"GAGNÉ":"PERDU";
+      let gain=result==="GAGNÉ"?1000:0;
+      await updateDoc(ticketRef,{used:true,usedBy:user.tel});
+      await addDoc(collection(db,"games"),{user:user.tel,ticket,chosen,gagnant,result,date:new Date(),gain});
+      if(gain>0){ const userRef=doc(db,"users",user.tel); await updateDoc(userRef,{balance:user.balance+gain}); }
+      ticketInput.value=chosenInput.value="";
+      resultDiv.textContent=result+" ! Numéro gagnant : "+gagnant;
+      resultDiv.className="result "+(result==="GAGNÉ"?"win":"lose");
+      updateUserHistory();
+    },3000);
+  };
+}
+
+async function updateUserHistory(){
+  const user=JSON.parse(localStorage.getItem("user"));
+  const snap=await getDocs(query(collection(db,"games"),where("user","==",user.tel)));
+  userHistory.innerHTML="";
+  let balance=0;
+  snap.forEach(d=>{ const g=d.data(); balance+=g.gain; userHistory.innerHTML+=`<tr><td>${g.ticket}</td><td>${g.chosen}</td><td>${g.result}</td></tr>`; });
+  userBalanceSpan.textContent=balance;
+}
+
+// ----------------- ADMIN -----------------
+function code(){return Math.random().toString(36).substring(2,6).toUpperCase();}
+generateTicketBtn.onclick=async()=>{
+  const c=code();
+  await setDoc(doc(db,"tickets",c),{code:c,used:false,date:new Date()});
+
+  const canvas=document.createElement("canvas"); canvas.width=200; canvas.height=80; canvas.className="ticket-img";
+  const ctx=canvas.getContext("2d");
+  ctx.fillStyle="#222"; ctx.fillRect(0,0,200,80);
+  ctx.fillStyle="#fff"; ctx.font="30px Arial"; ctx.textAlign="center"; ctx.fillText("Ticket: "+c,100,50);
+
+  const div=document.createElement("div"); div.className="ticket-box";
+  const shareBtn=document.createElement("button"); shareBtn.textContent="Partager";
+  shareBtn.onclick=()=>{ const dataUrl=canvas.toDataURL(); window.open(`https://api.whatsapp.com/send?text=Ticket%20Tombola%20Image:%20${dataUrl}`,"_blank"); };
+  div.appendChild(document.createTextNode(c)); div.appendChild(canvas); div.appendChild(shareBtn);
+  ticketsDiv.appendChild(div);
+  alert("Ticket généré : "+c);
+}
+
+async function loadAdmin(){
+  usersDiv.innerHTML="";
+  const usersSnap=await getDocs(collection(db,"users"));
+  for(const d of usersSnap.docs){
+    const u=d.data();
+    const gamesSnap=await getDocs(query(collection(db,"games"),where("user","==",u.tel)));
+    for(const g of gamesSnap.docs){
+      const game=g.data();
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${u.nom}</td><td>${u.tel}</td><td>${game.ticket}</td><td>${game.chosen}</td><td>${game.result}</td><td>${game.gain}</td><td><button onclick="payUser('${u.tel}')">Payer</button></td><td><button onclick="shareTicket('${game.ticket}')">Partager</button></td>`;
+      usersDiv.appendChild(tr);
+    }
+  }
+}
+
+window.payUser=async(tel)=>{ const ref=doc(db,"users",tel); await updateDoc(ref,{balance:0}); alert("Paiement validé !"); loadAdmin();}
+window.shareTicket=(c)=>{ alert("Ticket prêt à partager via WhatsApp !"); }
+
+</script>
+</body>
+</html>
