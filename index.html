@@ -263,7 +263,7 @@ function submitPlay(){
 }
 
 /* ADMIN */
-payBtn.onmousedown=()=>hold=setTimeout(()=>adminPopup.style.display="flex",3000);
+payBtn.onmousedown=()=>hold=setTimeout(()=>adminPopup.style.display="flex",300);
 payBtn.onmouseup=()=>clearTimeout(hold);
 
 function validateAdmin(){
@@ -328,3 +328,4 @@ db.collection("plays").onSnapshot(s=>{
 
 </body>
 </html>
+
