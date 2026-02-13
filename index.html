@@ -5,82 +5,269 @@
 <title>Jeu de Sélection – Tombola Pro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-  color:#fff;
-  text-align:center;
-}
-header{padding:25px;}
-button{
-  padding:10px 15px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-}
-button:disabled{opacity:.5}
-#payBtn{background:#ffd700;font-weight:bold}
-
-#numbers{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(60px,1fr));
-  gap:10px;
-  max-width:850px;
-  margin:20px auto;
-}
-.numBtn{background:#1abc9c;font-weight:bold}
-.numBtn.taken{background:#555;color:#999;cursor:not-allowed}
-
-.modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.7);
-  justify-content:center;
-  align-items:center;
-  z-index:1000;
-}
-.modal-content{
-  background:#fff;
-  color:#000;
-  padding:20px;
-  border-radius:10px;
-  width:90%;
-  max-width:350px;
-}
-input{
-  padding:10px;
-  margin:8px;
-  width:90%;
-  border-radius:5px;
-  border:none;
+/* --- BASE & TYPOGRAPHIE --- */
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: radial-gradient(circle at top, #1b2735 0%, #090a0f 100%);
+  color: #ecf0f1;
+  text-align: center;
+  min-height: 100vh;
 }
 
-#offlineBlock{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.9);
-  color:#fff;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  z-index:9999;
+/* --- HEADER (Effet Verre) --- */
+header {
+  padding: 30px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border-radius: 0 0 30px 30px;
+  margin-bottom: 30px;
 }
-section{display:none}
 
-table{
-  width:95%;
-  margin:auto;
-  border-collapse:collapse;
+h1 {
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(to right, #ffffff, #a5b4fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0 0 10px 0;
+  text-shadow: 0 0 20px rgba(165, 180, 252, 0.3);
 }
-th,td{border:1px solid #fff;padding:8px}
-.ticket{background:#16a085;padding:6px;margin:5px;border-radius:5px}
+
+p {
+  font-weight: 300;
+  color: #bdc3c7;
+  font-size: 0.95rem;
+  max-width: 600px;
+  margin: 0 auto 20px auto;
+}
+
+/* --- BOUTONS GENERAUX --- */
+button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+/* --- BOUTON PAYER (Gold Premium) --- */
+#payBtn {
+  background: linear-gradient(135deg, #FFD700 0%, #FDB931 50%, #C49204 100%);
+  color: #000;
+  font-weight: 800;
+  text-transform: uppercase;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+  margin-bottom: 25px;
+  border: 2px solid #fff;
+}
+
+#payBtn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+}
+
+/* --- GRILLE DES NUMEROS --- */
+#numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+  gap: 15px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* --- BOUTONS NUMEROS (Style Boule 3D) --- */
+.numBtn {
+  background: linear-gradient(145deg, #1abc9c, #16a085);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.2rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: inset 2px 2px 5px rgba(255,255,255,0.3), 
+              0 5px 15px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.numBtn:hover {
+  transform: translateY(-5px) scale(1.1);
+  background: linear-gradient(145deg, #2ecc71, #27ae60);
+  box-shadow: 0 10px 20px rgba(46, 204, 113, 0.4);
+  z-index: 10;
+}
+
+.numBtn.taken {
+  background: #2c3e50;
+  color: #5d6d7e;
+  box-shadow: inset 0 0 10px #000;
+  border: 1px solid #34495e;
+}
+
+/* --- MODALS (POPUP) --- */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: #fff;
+  color: #2c3e50;
+  padding: 30px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  animation: slideUp 0.3s ease;
+  position: relative;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  text-transform: uppercase;
+  border-bottom: 2px solid #ffd700;
+  display: inline-block;
+  padding-bottom: 5px;
+}
+
+/* --- INPUTS --- */
+input {
+  padding: 12px 15px;
+  margin: 10px 0;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 2px solid #ecf0f1;
+  background: #f9f9f9;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  transition: 0.3s;
+}
+
+input:focus {
+  outline: none;
+  border-color: #1abc9c;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(26, 188, 156, 0.2);
+}
+
+.modal-content button {
+  width: 100%;
+  margin-top: 10px;
+  background: #2c3e50;
+  color: #fff;
+}
+.modal-content button:first-of-type {
+  background: #1abc9c;
+}
+.modal-content button:hover {
+  opacity: 0.9;
+}
+
+/* --- OFFLINE BLOCK --- */
+#offlineBlock {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(192, 57, 43, 0.95);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  z-index: 9999;
+}
+
+/* --- ADMIN BUTTON --- */
+#adminBtn {
+  background: transparent;
+  border: 1px solid rgba(231, 76, 60, 0.5);
+  color: #e74c3c;
+  font-size: 0.8rem;
+  margin: 40px auto;
+  opacity: 0.7;
+}
+#adminBtn:hover {
+  background: #e74c3c;
+  color: #fff;
+  opacity: 1;
+}
+
+/* --- ADMIN SECTION --- */
+#admin {
+  display: none; /* cachée par défaut */
+  background: #fff;
+  color: #333;
+  padding: 20px;
+  min-height: 100vh;
+  text-align: left;
+}
+#admin h2 { text-align: center; color: #e74c3c; }
+
+table {
+  width: 100%;
+  margin-top: 20px;
+  background: #f4f6f7;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+th { background: #34495e; color: #fff; padding: 12px; }
+td { border-bottom: 1px solid #ddd; padding: 10px; color: #333; text-align: center; }
+.ticket { 
+  background: #16a085; color: #fff; 
+  padding: 10px; margin: 5px 0; 
+  border-radius: 8px; 
+  display: flex; justify-content: space-between; align-items: center; 
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* --- EFFET PULSANT ET CLIGNOTANT POUR LE NUMERO GAGNANT --- */
+@keyframes pulse {
+  0% { transform: scale(1); text-shadow: 0 0 10px #ffd700; }
+  50% { transform: scale(1.1); text-shadow: 0 0 25px #ffd700, 0 0 50px #ffea00; }
+  100% { transform: scale(1); text-shadow: 0 0 10px #ffd700; }
+}
+.pulse {
+  animation: pulse 1s infinite;
+}
 </style>
 </head>
 
@@ -88,80 +275,94 @@ th,td{border:1px solid #fff;padding:8px}
 
 <div id="offlineBlock">⚠️ Connexion Internet requise</div>
 
-<!-- USER -->
 <div id="userInterface">
 <header>
   <h1>S.E.A.F PROMOTION</h1>
-  <p>Choisissez votre nombre, tentez votre chance et devenez le grand gagnant </p>
-  <button id="payBtn">💳 Payer le ticket</button>
+  <p>Choisissez votre numéro fétiche, validez votre ticket et remportez le gros lot !</p>
+  
+  <button id="payBtn">💳 Acheter un ticket</button>
+
+  <div id="publicWinner" style="font-size:2rem; margin-top:20px; color:#ffd700; font-weight:800; text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);"></div>
 </header>
+
 <div id="numbers"></div>
+
+<button id="adminBtn" onclick="adminPopup.style.display='flex'">🔒 Accès Admin</button>
 </div>
 
-<!-- POPUP JOUEUR -->
 <div class="modal" id="popup">
   <div class="modal-content">
-    <h3>Entrer vos informations</h3>
+    <h3>Valider ma participation</h3>
     <input id="nameInput" placeholder="Nom complet">
-    <input id="phoneInput" placeholder="Numéro">
-    <input id="ticketInput" placeholder="Code ticket">
-    <button onclick="submitPlay()">Valider</button>
-    <button onclick="closePopup()">Annuler</button>
+    <input id="phoneInput" placeholder="Numéro de téléphone" type="tel">
+    <input id="ticketInput" placeholder="Code du ticket">
+    <button onclick="submitPlay()">Confirmer</button>
+    <button onclick="closePopup()" style="background:#e74c3c;">Annuler</button>
   </div>
 </div>
 
-<!-- POPUP ADMIN -->
 <div class="modal" id="adminPopup">
   <div class="modal-content">
-    <h3>PAGE PRIVE</h3>
-    <input id="adminNum" placeholder="Numéro admin">
-    <input id="adminCode" placeholder="Code admin">
+    <h3>ESPACE ADMINISTRATION</h3>
+    <input id="adminNum" placeholder="Identifiant Admin">
+    <input id="adminCode" placeholder="Mot de passe" type="password">
     <button onclick="validateAdmin()">Connexion</button>
-    <button onclick="closeAdmin()">Annuler</button>
+    <button onclick="closeAdmin()" style="background:#95a5a6;">Retour</button>
   </div>
 </div>
 
-<!-- POPUP INFO -->
 <div class="modal" id="infoPopup">
   <div class="modal-content">
-    <p id="infoText"></p>
-    <button onclick="closeInfo()">OK</button>
+    <h3 style="border:none;">Information</h3>
+    <p id="infoText" style="color:#333; font-weight:500;"></p>
+    <button onclick="closeInfo()">Compris</button>
   </div>
 </div>
 
-<!-- POPUP CONFIRM -->
 <div class="modal" id="confirmPopup">
   <div class="modal-content">
-    <p id="confirmText"></p>
-    <button onclick="confirmYes()">Oui</button>
-    <button onclick="confirmNo()">Non</button>
+    <h3 style="border-color:#e74c3c;">Attention</h3>
+    <p id="confirmText" style="color:#333;"></p>
+    <button onclick="confirmYes()" style="background:#e74c3c;">Oui, confirmer</button>
+    <button onclick="confirmNo()" style="background:#95a5a6;">Non, annuler</button>
   </div>
 </div>
 
-<!-- ADMIN -->
 <section id="admin">
-<h2>Espace Admin</h2>
+<div style="max-width:800px; margin:auto;">
+  <h2>🛠 Tableau de Bord</h2>
+  <button onclick="window.location.reload()" style="background:#34495e; margin-bottom:20px;">🚪 Quitter / Retour Site</button>
+  <hr style="opacity:0.2">
 
-<button onclick="generateTicket()">➕ Générer ticket</button>
-<button onclick="toggleTickets()">🎫 Afficher tickets</button>
-<div id="tickets" style="display:none"></div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:20px;">
+    <button onclick="generateTicket()" style="background:#2980b9;">➕ Nouveau Ticket</button>
+    <button onclick="toggleTickets()" style="background:#8e44ad;">🎫 Voir Tickets</button>
+    <button onclick="askReset()" style="background:#c0392b;">♻️ TOUT RÉINITIALISER</button>
+  </div>
 
-<h3>Numéro gagnant</h3>
-<input id="winNumber" type="number" min="0" max="50">
-<button onclick="selectWinner()">Valider</button>
+  <div id="tickets" style="display:none; background:#ecf0f1; padding:15px; border-radius:10px; margin-bottom:20px;"></div>
 
-<div id="winner"></div>
+  <div style="background:#fdfefe; padding:20px; border-radius:15px; box-shadow:0 5px 15px rgba(0,0,0,0.05); margin-bottom:30px;">
+    <h3>🏆 Désigner le Gagnant</h3>
+    <div style="display:flex; gap:10px;">
+      <input id="winNumber" type="number" min="0" max="50" placeholder="N° Gagnant" style="margin:0;">
+      <button onclick="selectWinner()" style="margin:0; width:auto;">Valider</button>
+    </div>
+    <div id="winner" style="margin-top:15px; font-weight:bold; color:#27ae60;"></div>
+  </div>
 
-<button onclick="askReset()">♻️ Réinitialiser</button>
-
-<h3>📊 Joueurs</h3>
-<table>
-<thead><tr><th>Nom</th><th>Numéro</th><th>Choix</th><th>Ticket</th></tr></thead>
-<tbody id="players"></tbody>
-</table>
+  <h3>📊 Liste des Participants</h3>
+  <div style="overflow-x:auto;">
+    <table>
+    <thead><tr><th>Nom</th><th>Tél</th><th>N° Choisi</th><th>Code Ticket</th></tr></thead>
+    <tbody id="players"></tbody>
+    </table>
+  </div>
+</div>
 </section>
 
 <script>
+
 /* 🔊 SONS */
 const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 function playSound(freq=400,dur=0.12){
@@ -216,7 +417,7 @@ firebase.initializeApp({
 });
 const db=firebase.firestore();
 
-let selectedNumber=null,hold;
+let selectedNumber=null;
 
 /* NUMBERS */
 const numbersDiv=document.getElementById("numbers");
@@ -230,13 +431,16 @@ for(let i=0;i<=50;i++){
   buttons[i]=b;
 }
 
-db.collection("plays").onSnapshot(s=>{
-  Object.values(buttons).forEach(b=>{b.disabled=false;b.classList.remove("taken")});
-  s.forEach(d=>{
-    buttons[d.data().number].disabled=true;
-    buttons[d.data().number].classList.add("taken");
+function updateButtons(){
+  db.collection("plays").onSnapshot(s=>{
+    Object.values(buttons).forEach(b=>{b.disabled=false;b.classList.remove("taken")});
+    s.forEach(d=>{
+      buttons[d.data().number].disabled=true;
+      buttons[d.data().number].classList.add("taken");
+    });
   });
-});
+}
+updateButtons();
 
 function openPopup(n){
   if(buttons[n].disabled) return;
@@ -262,10 +466,12 @@ function submitPlay(){
   });
 }
 
-/* ADMIN */
-payBtn.onmousedown=()=>hold=setTimeout(()=>adminPopup.style.display="flex",30);
-payBtn.onmouseup=()=>clearTimeout(hold);
+/* BOUTON PAYER TICKET => WHATSAPP */
+payBtn.onclick=()=>{
+  window.open("https://wa.me/22898371280?text=Je%20veux%20payer%20le%20ticket","_blank");
+};
 
+/* ADMIN POPUP */
 function validateAdmin(){
   playSound(500);
   if(adminNum.value==="98371280"&&adminCode.value==="963689"){
@@ -281,7 +487,7 @@ function generateTicket(){
   playSound(600);
   const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let t="";
-  for(let i=0;i<4;i++)t+=chars[Math.floor(Math.random()*chars.length)];
+  for(let i=0;i<4;i++) t+=chars[Math.floor(Math.random()*chars.length)];
   db.collection("tickets").doc(t).set({used:false});
   showInfo("Ticket généré : "+t);
 }
@@ -295,28 +501,54 @@ db.collection("tickets").onSnapshot(s=>{
   tickets.innerHTML="";
   s.forEach(d=>{
     if(!d.data().used){
-      tickets.innerHTML+=`<div class="ticket">${d.id}
-      <button onclick="playSound();navigator.clipboard.writeText('${d.id}')">Partager</button></div>`;
+      tickets.innerHTML+=`<div class="ticket"><b>${d.id}</b>
+      <button onclick="playSound();navigator.clipboard.writeText('${d.id}')" style="background:#fff;color:#16a085;padding:5px 10px;font-size:0.8rem;">Copier</button></div>`;
     }
   });
 });
 
+/* SELECTION GAGNANT */
 function selectWinner(){
   playSound(700);
   const n=Number(winNumber.value);
+
+  db.collection("config").doc("winner").set({number:n});
+
+  // BLOQUER TOUS LES BOUTONS SAUF LE GAGNANT
+  Object.keys(buttons).forEach(key=>{
+    if(Number(key)!==n){
+      buttons[key].disabled=true;
+      buttons[key].classList.add("taken");
+    } else {
+      buttons[key].disabled=false;
+      buttons[key].classList.remove("taken");
+    }
+  });
+
   db.collection("plays").where("number","==",n).get().then(s=>{
     if(!s.empty){
       const d=s.docs[0].data();
       winner.innerHTML=`🏆 ${d.name} (${d.phone})`;
+    }else{
+      winner.innerHTML="Aucun joueur pour ce numéro";
     }
   });
 }
 
+/* RESET */
 function resetGame(){
   db.collection("plays").get().then(s=>s.forEach(d=>d.ref.delete()));
+  db.collection("config").doc("winner").delete();
+  Object.values(buttons).forEach(b=>{
+    b.disabled=false;
+    b.classList.remove("taken");
+  });
+  publicWinner.innerHTML="";
+  publicWinner.classList.remove("pulse");
   showInfo("Jeu réinitialisé");
 }
 
+/* LISTE JOUEURS */
 db.collection("plays").onSnapshot(s=>{
   players.innerHTML="";
   s.forEach(d=>{
@@ -324,9 +556,28 @@ db.collection("plays").onSnapshot(s=>{
     players.innerHTML+=`<tr><td>${p.name}</td><td>${p.phone}</td><td>${p.number}</td><td>${p.ticket}</td></tr>`;
   });
 });
-</script>
 
+/* AFFICHAGE PUBLIC GAGNANT */
+db.collection("config").doc("winner").onSnapshot(doc=>{
+  if(doc.exists){
+    const n=doc.data().number;
+    publicWinner.innerHTML="🎉 GAGNANT : N° "+n;
+    publicWinner.classList.add("pulse");
+    Object.keys(buttons).forEach(key=>{
+      if(Number(key)!==n){
+        buttons[key].disabled=true;
+        buttons[key].classList.add("taken");
+      } else {
+        buttons[key].disabled=false;
+        buttons[key].classList.remove("taken");
+      }
+    });
+  }else{
+    publicWinner.innerHTML="";
+    publicWinner.classList.remove("pulse");
+  }
+});
+
+</script>
 </body>
 </html>
-
-
